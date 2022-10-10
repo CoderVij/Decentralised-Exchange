@@ -291,6 +291,7 @@ export default function Home()
 
 
   const renderButton = () => {
+
     // If wallet is not connected, return a button which allows them to connect their wllet
     if (!walletConnected) {
       return (

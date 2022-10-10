@@ -7,78 +7,85 @@ import {
 } from "../constants";
 
 
-export const getAmountOfTokensReceivedFromSwap = async(
-    _swapAmountWei,
-    provider,
-    ethSelected,
-    ethBalance,
-    reservedCD
-) =>
+export const getAmountOfTokensReceivedFromSwap = async (
+  _swapAmountWei,
+  provider,
+  ethSelected,
+  ethBalance,
+  reservedCD
+) => 
 {
-    const exchangeContract = new Contract(
-        EXCHANGE_CONTRACT_ADDRESS,
-        EXCHANGE_CONTRACT_ABI,
-        provider
-    );
+  
+  const exchangeContract = new Contract(
+    EXCHANGE_CONTRACT_ADDRESS,
+    EXCHANGE_CONTRACT_ABI,
+    provider
+  );
+  let amountOfTokens;
 
-    let amountOfTokens;
-    if (ethSelected) 
-    {
-        amountOfTokens = await exchangeContract.getAmountOfToken(
-          _swapAmountWei,
-          ethBalance,
-          reservedCD
-        );
-    }
-    else
-    {
-        amountOfTokens = await exchangeContract.getAmountOfToken(
-            _swapAmountWei,
-            reservedCD,
-            ethBalance
-          );
-    }
-    return amountOfTokens;
+  if (ethSelected) {
+    amountOfTokens = await exchangeContract.getAmountOfToken(
+      _swapAmountWei,
+      ethBalance,
+      reservedCD
+    );
+  } 
+  else 
+  {
+ 
+    amountOfTokens = await exchangeContract.getAmountOfToken(
+      _swapAmountWei,
+      reservedCD,
+      ethBalance
+    );
+  }
+
+  return amountOfTokens;
 };
 
-export const swapTokens = async(  signer,
+
+export const swapTokens = async (
+  signer,
   swapAmountWei,
   tokenToBeReceivedAfterSwap,
-  ethSelected) =>
+  ethSelected
+) =>
 {
-    const exchangeContract = new Contract(
+  
+  const exchangeContract = new Contract(
+    EXCHANGE_CONTRACT_ADDRESS,
+    EXCHANGE_CONTRACT_ABI,
+    signer
+  );
+  const tokenContract = new Contract(
+    TOKEN_CONTRACT_ADDRESS,
+    TOKEN_CONTRACT_ABI,
+    signer
+  );
+  let tx;
+
+  if (ethSelected) 
+  {
+    tx = await exchangeContract.ethToCryptoDevToken(
+      tokenToBeReceivedAfterSwap,
+      {
+        value: swapAmountWei,
+      }
+    );
+  } 
+  else 
+  {
+
+    tx = await tokenContract.approve(
       EXCHANGE_CONTRACT_ADDRESS,
-      EXCHANGE_CONTRACT_ABI,
-      signer
+      swapAmountWei.toString()
     );
-    const tokenContract = new Contract(
-      TOKEN_CONTRACT_ADDRESS,
-      TOKEN_CONTRACT_ABI,
-      signer
-    );
-
-    let tx;
-    if (ethSelected) 
-    {
-      tx = await exchangeContract.ethToCryptoDevToken(
-        tokenToBeReceivedAfterSwap,
-        {
-          value: swapAmountWei,
-        }
-      );
-    }
-    else
-    {
-      tx = await tokenContract.approve(
-        EXCHANGE_CONTRACT_ADDRESS,
-        swapAmountWei.toString()
-      );
-      await tx.wait();
-
-      tx = await exchangeContract.cryptoDevTokenToEth(
-        swapAmountWei,
-        tokenToBeReceivedAfterSwap
-      );
-    }
     await tx.wait();
+
+    tx = await exchangeContract.cryptoDevTokenToEth(
+      swapAmountWei,
+      tokenToBeReceivedAfterSwap
+    );
+  }
+  await tx.wait();
 };
